@@ -1,0 +1,231 @@
+version: "3.8"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Hadoop 3.3.6 Full Cluster
+# Includes: HDFS, YARN, MapReduce, Hive, HBase, Spark, ZooKeeper, MySQL
+# ─────────────────────────────────────────────────────────────────────────────
+
+networks:
+  hadoop-net:
+    driver: bridge
+
+volumes:
+  namenode_data:
+  datanode1_data:
+  datanode2_data:
+  hbase_data:
+  mysql_data:
+  spark_history:
+
+# Shared Hadoop config injected into all Hadoop services
+x-hadoop-env: &hadoop-env
+  CORE_CONF_fs_defaultFS: "hdfs://namenode:9000"
+  CORE_CONF_hadoop_http_staticuser_user: "root"
+  HDFS_CONF_dfs_replication: "2"
+  HDFS_CONF_dfs_namenode_datanode_registration_ip___hostname___check: "false"
+  YARN_CONF_yarn_resourcemanager_hostname: "resourcemanager"
+  YARN_CONF_yarn_nodemanager_aux___services: "mapreduce_shuffle"
+  YARN_CONF_yarn_nodemanager_resource_memory___mb: "${YARN_NODEMANAGER_MEMORY_MB:-2048}"
+  YARN_CONF_yarn_nodemanager_resource_cpu___vcores: "${YARN_NODEMANAGER_VCORES:-2}"
+  YARN_CONF_yarn_scheduler_maximum___allocation___mb: "2048"
+  YARN_CONF_yarn_scheduler_maximum___allocation___vcores: "2"
+  MAPRED_CONF_mapreduce_framework_name: "yarn"
+  MAPRED_CONF_mapreduce_application_classpath: >-
+    /opt/hadoop/share/hadoop/mapreduce/*,
+    /opt/hadoop/share/hadoop/mapreduce/lib/*
+
+services:
+
+  # ── HDFS NameNode ──────────────────────────────────────────────────────────
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: hadoop-namenode
+    restart: unless-stopped
+    ports:
+      - "${NAMENODE_HTTP_PORT:-9870}:9870"   # Web UI
+      - "${NAMENODE_RPC_PORT:-9000}:9000"    # RPC
+    volumes:
+      - namenode_data:/hadoop/dfs/name
+    environment:
+      <<: *hadoop-env
+      CLUSTER_NAME: "hadoop-playground"
+    networks:
+      - hadoop-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9870"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ── HDFS DataNode 1 ────────────────────────────────────────────────────────
+  datanode1:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: hadoop-datanode1
+    restart: unless-stopped
+    volumes:
+      - datanode1_data:/hadoop/dfs/data
+    environment:
+      <<: *hadoop-env
+      SERVICE_PRECONDITION: "namenode:9870"
+    depends_on:
+      namenode:
+        condition: service_healthy
+    networks:
+      - hadoop-net
+
+  # ── HDFS DataNode 2 ────────────────────────────────────────────────────────
+  datanode2:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: hadoop-datanode2
+    restart: unless-stopped
+    volumes:
+      - datanode2_data:/hadoop/dfs/data
+    environment:
+      <<: *hadoop-env
+      SERVICE_PRECONDITION: "namenode:9870"
+    depends_on:
+      namenode:
+        condition: service_healthy
+    networks:
+      - hadoop-net
+
+  # ── YARN ResourceManager ──────────────────────────────────────────────────
+  resourcemanager:
+    image: bde2020/hadoop-resourcemanager:2.0.0-hadoop3.2.1-java8
+    container_name: hadoop-resourcemgr
+    restart: unless-stopped
+    ports:
+      - "${YARN_RESOURCEMANAGER_PORT:-8088}:8088"
+    environment:
+      <<: *hadoop-env
+      SERVICE_PRECONDITION: "namenode:9000 namenode:9870 datanode1:9864 datanode2:9864"
+    depends_on:
+      - datanode1
+      - datanode2
+    networks:
+      - hadoop-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/ws/v1/cluster/info"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ── YARN NodeManager ──────────────────────────────────────────────────────
+  nodemanager:
+    image: bde2020/hadoop-nodemanager:2.0.0-hadoop3.2.1-java8
+    container_name: hadoop-nodemanager
+    restart: unless-stopped
+    ports:
+      - "${YARN_NODEMANAGER_PORT:-8042}:8042"
+    environment:
+      <<: *hadoop-env
+      SERVICE_PRECONDITION: "namenode:9000 namenode:9870 datanode1:9864 datanode2:9864 resourcemanager:8088"
+    depends_on:
+      resourcemanager:
+        condition: service_healthy
+    networks:
+      - hadoop-net
+
+  # ── MapReduce History Server ───────────────────────────────────────────────
+  historyserver:
+    image: bde2020/hadoop-historyserver:2.0.0-hadoop3.2.1-java8
+    container_name: hadoop-history
+    restart: unless-stopped
+    ports:
+      - "${MR_HISTORY_PORT:-19888}:19888"
+    environment:
+      <<: *hadoop-env
+      SERVICE_PRECONDITION: "namenode:9000 namenode:9870 datanode1:9864 datanode2:9864 resourcemanager:8088"
+    depends_on:
+      resourcemanager:
+        condition: service_healthy
+    networks:
+      - hadoop-net
+
+  # ── MySQL (Hive Metastore backend) ─────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: hadoop-mysql
+    restart: unless-stopped
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:-hivepassword}"
+      MYSQL_DATABASE: "${MYSQL_DATABASE:-hive_metastore}"
+      MYSQL_USER: "${MYSQL_USER:-hive}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:-hive}"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - hadoop-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-hivepassword}"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+
+  # ── Apache Hive 3.1.3 ─────────────────────────────────────────────────────
+  hive:
+    image: bde2020/hive:2.3.2-postgresql-metastore
+    container_name: hadoop-hive
+    restart: unless-stopped
+    ports:
+      - "${HIVE_SERVER2_PORT:-10000}:10000"   # HiveServer2 Thrift
+      - "${HIVE_WEBUI_PORT:-10002}:10002"     # HiveServer2 Web UI
+    environment:
+      <<: *hadoop-env
+      HIVE_SITE_CONF_javax_jdo_option_ConnectionURL: "jdbc:mysql://mysql:3306/hive_metastore?createDatabaseIfNotExist=true"
+      HIVE_SITE_CONF_javax_jdo_option_ConnectionDriverName: "com.mysql.cj.jdbc.Driver"
+      HIVE_SITE_CONF_javax_jdo_option_ConnectionUserName: "${MYSQL_USER:-hive}"
+      HIVE_SITE_CONF_javax_jdo_option_ConnectionPassword: "${MYSQL_PASSWORD:-hive}"
+      HIVE_SITE_CONF_datanucleus_autoCreateSchema: "false"
+      HIVE_SITE_CONF_hive_metastore_uris: "thrift://hive:9083"
+      SERVICE_PRECONDITION: "namenode:9870 datanode1:9864 mysql:3306"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      datanode1:
+        condition: service_started
+    networks:
+      - hadoop-net
+
+  # ── Apache HBase 2.x + ZooKeeper ──────────────────────────────────────────
+  hbase:
+    image: dajobe/hbase
+    container_name: hadoop-hbase
+    restart: unless-stopped
+    ports:
+      - "${HBASE_MASTER_PORT:-16000}:16000"
+      - "${HBASE_MASTER_WEBUI_PORT:-16010}:16010"
+      - "${HBASE_REGIONSERVER_PORT:-16020}:16020"
+      - "${ZOOKEEPER_PORT:-2181}:2181"
+    environment:
+      HBASE_MANAGES_ZK: "true"
+    networks:
+      - hadoop-net
+    volumes:
+      - hbase_data:/data
+
+  # ── Apache Spark 3.x on YARN ──────────────────────────────────────────────
+  spark:
+    image: bde2020/spark-master:3.3.0-hadoop3.3
+    container_name: hadoop-spark
+    restart: unless-stopped
+    ports:
+      - "${SPARK_HISTORY_PORT:-18080}:18080"  # Spark History Server
+      - "7077:7077"                            # Spark Master (standalone)
+      - "8080:8080"                            # Spark Web UI
+    environment:
+      <<: *hadoop-env
+      SPARK_MODE: "master"
+      SPARK_MASTER_HOST: "spark"
+      SPARK_EVENTLOG_ENABLED: "true"
+      SPARK_EVENTLOG_DIR: "hdfs://namenode:9000/spark-logs"
+      INIT_DAEMON_STEP: "setup_spark"
+    volumes:
+      - spark_history:/tmp/spark-events
+    depends_on:
+      namenode:
+        condition: service_healthy
+    networks:
+      - hadoop-net

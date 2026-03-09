@@ -1,0 +1,15 @@
+Apache Hadoop is an open-source framework for distributed storage and processing of large datasets.
+It was inspired by Google's MapReduce and Google File System papers.
+Hadoop uses a master-slave architecture with NameNode and DataNodes.
+HDFS splits files into blocks and distributes them across the cluster.
+YARN manages cluster resources and schedules jobs.
+MapReduce is the classic batch processing framework in Hadoop.
+Apache Hive provides SQL-like query capabilities over HDFS.
+Apache HBase is a distributed NoSQL database built on HDFS.
+Apache Pig offers a high-level data flow language called Pig Latin.
+Apache Sqoop transfers data between Hadoop and relational databases.
+Apache Flume ingests streaming log data into HDFS.
+Apache ZooKeeper provides distributed coordination services.
+Apache Spark is a fast, in-memory data processing engine that runs on YARN.
+Data replication ensures fault tolerance when nodes fail.
+The secondary namenode checkpoints the filesystem metadata periodically.
