@@ -20,6 +20,8 @@ HDFS is the primary storage layer of Hadoop. It splits large files into 128 MB b
 | `02_file_permissions.sh` | chmod, chown, ACLs |
 | `03_replication_snapshots.sh` | Replication factor, HDFS snapshots |
 | `04_advanced_features.sh` | Trash, quota, safe mode, fsck |
+| `05_webhdfs_api.sh` | WebHDFS REST API (curl), HttpFS gateway |
+| `06_file_formats.sh` | Avro, ORC, Parquet, SequenceFile, compression codecs |
 
 ## How to Run
 ```bash

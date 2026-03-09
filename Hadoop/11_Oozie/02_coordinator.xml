@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  02_coordinator.xml — Oozie Coordinator: time-based scheduling + data availability trigger
+
+  Runs the workflow every hour, only when input data for that hour exists in HDFS.
+
+  Submit: oozie job -oozie http://localhost:11000/oozie -config coordinator.properties -run
+  Status: oozie job -oozie http://localhost:11000/oozie -info <coord-job-id>
+-->
+<coordinator-app
+    name="hourly-wordcount-coordinator"
+    frequency="${coord:hours(1)}"
+    start="${startTime}"
+    end="${endTime}"
+    timezone="UTC"
+    xmlns="uri:oozie:coordinator:0.4">
+
+    <!-- ── Data set: define what input data looks like ────────────────────── -->
+    <datasets>
+
+        <!-- Input dataset: hourly partitioned logs in HDFS -->
+        <dataset name="input-logs"
+                 frequency="${coord:hours(1)}"
+                 initial-instance="${startTime}"
+                 timezone="UTC">
+            <!-- EL expressions: ${YEAR}, ${MONTH}, ${DAY}, ${HOUR} are substituted at runtime -->
+            <uri-template>
+                hdfs://namenode:9000/data/logs/${YEAR}/${MONTH}/${DAY}/${HOUR}
+            </uri-template>
+            <!-- Wait up to 30 minutes past nominal time for data to arrive -->
+            <done-flag>_SUCCESS</done-flag>
+        </dataset>
+
+        <!-- Output dataset: hourly word count results -->
+        <dataset name="output-wordcount"
+                 frequency="${coord:hours(1)}"
+                 initial-instance="${startTime}"
+                 timezone="UTC">
+            <uri-template>
+                hdfs://namenode:9000/output/wordcount/${YEAR}/${MONTH}/${DAY}/${HOUR}
+            </uri-template>
+            <done-flag/>
+        </dataset>
+
+    </datasets>
+
+    <!-- ── Data input/output triggers ────────────────────────────────────── -->
+    <input-events>
+        <!-- Coordinator waits until ${coord:latest(0)} (most recent hour) is available -->
+        <data-in name="input-data" dataset="input-logs">
+            <instance>${coord:current(0)}</instance>
+        </data-in>
+    </input-events>
+
+    <output-events>
+        <data-out name="output-data" dataset="output-wordcount">
+            <instance>${coord:current(0)}</instance>
+        </data-out>
+    </output-events>
+
+    <!-- ── Action: trigger the workflow ──────────────────────────────────── -->
+    <action>
+        <workflow>
+            <!-- Path to the workflow.xml in HDFS -->
+            <app-path>${workflowAppPath}</app-path>
+
+            <configuration>
+                <property>
+                    <name>jobTracker</name>
+                    <value>${jobTracker}</value>
+                </property>
+                <property>
+                    <name>nameNode</name>
+                    <value>${nameNode}</value>
+                </property>
+                <!-- Pass the resolved data input path to the workflow -->
+                <property>
+                    <name>inputDir</name>
+                    <value>${coord:dataIn('input-data')}</value>
+                </property>
+                <property>
+                    <name>outputDir</name>
+                    <value>${coord:dataOut('output-data')}</value>
+                </property>
+                <property>
+                    <name>dbName</name>
+                    <value>wordcount_db</value>
+                </property>
+            </configuration>
+        </workflow>
+    </action>
+
+</coordinator-app>

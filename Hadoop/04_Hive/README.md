@@ -35,3 +35,4 @@ docker exec -it hadoop-hive beeline -u "jdbc:hive2://localhost:10000" -f /tmp/hi
 | `05_bucketing.hql` | Bucketing + sampling |
 | `06_joins.hql` | Inner, outer, map-side joins |
 | `07_window_functions.hql` | ROW_NUMBER, RANK, LAG, LEAD, aggregates |
+| `08_execution_engines.hql` | MapReduce vs Tez vs Spark engine, CBO, vectorization, Hive Metastore as catalog |

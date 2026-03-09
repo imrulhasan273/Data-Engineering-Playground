@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  03_bundle.xml — Oozie Bundle: group multiple coordinators into one unit
+
+  A Bundle is a collection of coordinators that can be managed together.
+  Use case: All daily ETL pipelines (wordcount + reporting + export) in one bundle.
+
+  Submit: oozie job -oozie http://localhost:11000/oozie -config bundle.properties -run
+-->
+<bundle-app name="daily-etl-bundle" xmlns="uri:oozie:bundle:0.2">
+
+    <!-- Controls: kick-off time for all coordinators in this bundle -->
+    <controls>
+        <kick-off-time>${kickOffTime}</kick-off-time>
+    </controls>
+
+    <!-- ── Coordinator 1: Word Count ─────────────────────────────────────── -->
+    <coordinator name="wordcount-coordinator">
+        <app-path>${nameNode}/oozie/apps/wordcount/coordinator.xml</app-path>
+        <configuration>
+            <property>
+                <name>startTime</name>
+                <value>${startTime}</value>
+            </property>
+            <property>
+                <name>endTime</name>
+                <value>${endTime}</value>
+            </property>
+            <property>
+                <name>workflowAppPath</name>
+                <value>${nameNode}/oozie/apps/wordcount</value>
+            </property>
+            <property>
+                <name>jobTracker</name>
+                <value>${jobTracker}</value>
+            </property>
+            <property>
+                <name>nameNode</name>
+                <value>${nameNode}</value>
+            </property>
+        </configuration>
+    </coordinator>
+
+    <!-- ── Coordinator 2: Daily Reporting ────────────────────────────────── -->
+    <coordinator name="daily-report-coordinator">
+        <app-path>${nameNode}/oozie/apps/reporting/coordinator.xml</app-path>
+        <configuration>
+            <property>
+                <name>startTime</name>
+                <value>${startTime}</value>
+            </property>
+            <property>
+                <name>endTime</name>
+                <value>${endTime}</value>
+            </property>
+            <property>
+                <name>workflowAppPath</name>
+                <value>${nameNode}/oozie/apps/reporting</value>
+            </property>
+            <property>
+                <name>jobTracker</name>
+                <value>${jobTracker}</value>
+            </property>
+            <property>
+                <name>nameNode</name>
+                <value>${nameNode}</value>
+            </property>
+        </configuration>
+    </coordinator>
+
+</bundle-app>

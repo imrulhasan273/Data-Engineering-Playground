@@ -42,7 +42,9 @@ Work through the modules in order — each builds on the previous.
 ```
 00_Setup → 01_HDFS → 02_MapReduce → 03_YARN → 04_Hive
                                                   ↓
-                              09_Advanced ← 08_Spark ← 07_Sqoop ← 06_Pig ← 05_HBase
+09_Advanced ← 08_Spark ← 07_Sqoop ← 06_Pig ← 05_HBase
+     ↓
+10_Flume → 11_Oozie → 12_ZooKeeper
 ```
 
 ---
@@ -68,6 +70,8 @@ Docker Compose cluster with HDFS, YARN, Hive, HBase, Spark, MySQL.
 | `02_file_permissions.sh` | chmod, chown, chgrp, ACLs (setfacl/getfacl) |
 | `03_replication_snapshots.sh` | setrep, createSnapshot, deleteSnapshot, snapshotDiff |
 | `04_advanced_features.sh` | fsck, quota, safe mode, trash, admin commands |
+| `05_webhdfs_api.sh` | WebHDFS REST API (curl), HttpFS gateway |
+| `06_file_formats.sh` | Avro, ORC, Parquet, SequenceFile, compression codecs, splittable comparison |
 
 ```bash
 docker exec -it hadoop-namenode bash
@@ -116,6 +120,7 @@ docker exec -it hadoop-namenode bash /opt/mapreduce/01_WordCount/run.sh
 | `05_bucketing.hql` | Bucketing, TABLESAMPLE, bucket map join |
 | `06_joins.hql` | INNER, LEFT/RIGHT/FULL OUTER, SEMI, map-side, multi-table, self-join |
 | `07_window_functions.hql` | ROW_NUMBER, RANK, DENSE_RANK, LAG, LEAD, FIRST_VALUE, running totals |
+| `08_execution_engines.hql` | MapReduce vs Tez vs Spark, CBO, vectorization, Metastore as catalog |
 
 ```bash
 docker exec -it hadoop-hive bash /tmp/hive_scripts/01_setup.sh
@@ -130,6 +135,7 @@ docker exec -it hadoop-hive beeline -u "jdbc:hive2://localhost:10000" -f /tmp/hi
 |--------|----------------|
 | `01_shell_operations.sh` | create, put, get, scan, delete, filters, namespaces, compaction |
 | `02_python_happybase.py` | Python HappyBase API, batch writes, counters, scan filters |
+| `03_phoenix_integration.sh` | Phoenix SQL, row key design, HBase filters, Hive-HBase, Spark-HBase |
 
 ```bash
 # Shell
@@ -183,13 +189,79 @@ docker exec -it hadoop-spark spark-submit \
 
 ---
 
-### [09_Advanced](09_Advanced/) — Advanced HDFS Features
+### [09_Advanced](09_Advanced/) — Advanced HDFS Features & Security
 
 | File | Topics Covered |
 |------|----------------|
 | `01_erasure_coding.sh` | EC policies (RS, XOR), enable/disable, storage savings |
 | `02_hdfs_encryption.sh` | KMS, encryption zones, key rotation, TDE |
 | `03_federation.md` | HDFS Federation, ViewFs, Router-Based Federation, HA concepts |
+| `04_hadoop_security.sh` | Kerberos, Apache Ranger, Apache Knox, SSL/TLS wire encryption |
+
+---
+
+### [10_Flume](10_Flume/) — Log Collection & Streaming Ingestion
+
+| File | Topics Covered |
+|------|----------------|
+| `01_flume_basic.conf` | Netcat → Memory → Logger (simplest agent) |
+| `02_flume_hdfs_sink.conf` | Taildir → File Channel → HDFS (production pattern) |
+| `03_flume_fanout.conf` | Fan-out: Exec → HDFS + Kafka dual sink |
+| `04_flume_kafka_source.conf` | Kafka → File Channel → HDFS (Kafka landing pipeline) |
+| `05_flume_operations.sh` | Install, start/stop, test, multi-hop topology |
+
+```bash
+# Install Flume (AlmaLinux 9 / VPS)
+sudo dnf install -y java-11-openjdk
+wget https://downloads.apache.org/flume/1.11.0/apache-flume-1.11.0-bin.tar.gz
+tar -xzf apache-flume-1.11.0-bin.tar.gz && sudo mv apache-flume-1.11.0-bin /opt/flume
+
+# Start basic agent
+flume-ng agent --name agent1 --conf-file 10_Flume/01_flume_basic.conf -Dflume.root.logger=INFO,console
+
+# Test
+echo "Hello Flume" | nc localhost 44444
+```
+
+---
+
+### [11_Oozie](11_Oozie/) — Workflow Scheduling & Orchestration
+
+| File | Topics Covered |
+|------|----------------|
+| `01_workflow.xml` | DAG workflow: Shell → MapReduce → Hive → Shell |
+| `02_coordinator.xml` | Hourly coordinator with data-availability trigger |
+| `03_bundle.xml` | Bundle grouping multiple coordinators |
+| `04_job.properties` | Job submission parameters |
+| `05_oozie_operations.sh` | Install, deploy, submit, monitor, control, EL reference |
+
+```bash
+# Deploy and run workflow
+hdfs dfs -mkdir -p hdfs:///oozie/apps/wordcount
+hdfs dfs -put 11_Oozie/01_workflow.xml hdfs:///oozie/apps/wordcount/workflow.xml
+oozie job -oozie http://localhost:11000/oozie -config 11_Oozie/04_job.properties -run
+
+# Monitor
+oozie job -oozie http://localhost:11000/oozie -info <job-id>
+```
+
+---
+
+### [12_ZooKeeper](12_ZooKeeper/) — Distributed Coordination
+
+| File | Topics Covered |
+|------|----------------|
+| `01_zk_operations.sh` | zkCli: CRUD, znode types, watches, locking, leader election patterns |
+| `02_python_kazoo.py` | Python Kazoo: CRUD, watches, Lock, Election, Barrier recipes |
+
+```bash
+# Connect to ZooKeeper (embedded in HBase container)
+docker exec -it hadoop-hbase zkCli.sh -server localhost:2181
+
+# Python client
+pip install kazoo
+python 12_ZooKeeper/02_python_kazoo.py
+```
 
 ---
 
@@ -226,6 +298,20 @@ pig -x local script.pig   # local mode
 # Spark
 spark-submit --master yarn --deploy-mode client script.py
 spark-submit --master yarn --deploy-mode cluster script.py
+
+# WebHDFS REST API
+curl -s "http://localhost:9870/webhdfs/v1/?op=LISTSTATUS&user.name=root"
+
+# Flume
+flume-ng agent --name agent1 --conf-file flume.conf -Dflume.root.logger=INFO,console
+
+# Oozie
+oozie job -oozie http://localhost:11000/oozie -config job.properties -run
+oozie jobs -oozie http://localhost:11000/oozie -status RUNNING
+
+# ZooKeeper
+zkCli.sh -server localhost:2181
+echo ruok | nc localhost 2181
 ```
 
 ---

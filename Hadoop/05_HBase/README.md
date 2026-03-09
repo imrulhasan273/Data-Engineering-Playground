@@ -33,3 +33,4 @@ pip install happybase
 |------|---------------|
 | `01_shell_operations.sh` | HBase shell commands |
 | `02_python_happybase.py` | Python API via HappyBase (Thrift) |
+| `03_phoenix_integration.sh` | Phoenix SQL layer, row key design, HBase filters, Hive-HBase & Spark-HBase integration |
