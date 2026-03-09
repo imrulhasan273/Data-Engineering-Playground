@@ -43,29 +43,56 @@ Each node = **znode**: holds data (up to 1 MB) + metadata (version, timestamps, 
 
 ## Quick Start
 
-### Connect to ZooKeeper (embedded in HBase container)
+> ZooKeeper is embedded in the `hadoop-hbase` Docker container. All `zkCli.sh` commands run
+> inside the container. Windows users: use **Git Bash**, **WSL2**, or `docker exec` — not PowerShell or CMD.
 
+### Connect to ZooKeeper
+
+**Linux / Mac / Git Bash:**
 ```bash
-# Using the HBase container's embedded ZooKeeper
+# Connect via docker exec (recommended — works on all platforms)
 docker exec -it hadoop-hbase zkCli.sh -server localhost:2181
 
-# Or from host (if port 2181 is exposed)
+# Or from host if ZK port 2181 is exposed (Linux/Mac only — requires zkCli.sh installed locally)
 zkCli.sh -server localhost:2181
+```
+
+**Windows (PowerShell):**
+```powershell
+# Use docker exec — zkCli.sh runs inside the Linux container
+docker exec -it hadoop-hbase zkCli.sh -server localhost:2181
 ```
 
 ### Run the shell script
 
+**Linux / Mac / Git Bash:**
 ```bash
-docker cp 01_zk_operations.sh hadoop-hbase:/tmp/
+docker cp 12_ZooKeeper/01_zk_operations.sh hadoop-hbase:/tmp/
 docker exec -it hadoop-hbase bash /tmp/01_zk_operations.sh
 ```
 
-### Run the Python script
+**Windows (PowerShell):**
+```powershell
+docker cp 12_ZooKeeper\01_zk_operations.sh hadoop-hbase:/tmp/
+docker exec -it hadoop-hbase bash /tmp/01_zk_operations.sh
+```
 
+### Install Kazoo and run the Python script
+
+**Linux / Mac:**
+```bash
+pip3 install kazoo
+python3 12_ZooKeeper/02_python_kazoo.py
+```
+
+**Windows (PowerShell or Git Bash):**
 ```bash
 pip install kazoo
-python 02_python_kazoo.py
+python 12_ZooKeeper/02_python_kazoo.py
 ```
+
+> The Python script connects to ZooKeeper at `localhost:2181`. Make sure port 2181 is exposed
+> in `docker-compose.yml` (it is — see `00_Setup/docker-compose.yml`).
 
 ## zkCli.sh Quick Reference
 
@@ -90,12 +117,30 @@ deleteall /mynode                # delete recursively
 get -w /mynode                   # watch data changes
 ls  -w /mynode                   # watch children changes
 exists -w /mynode                # watch existence
+```
 
-# Health (four-letter words)
-echo ruok | nc localhost 2181    # is OK?
-echo stat | nc localhost 2181    # stats
+### ZooKeeper Health (Four-Letter Commands)
+
+**Linux / Mac / Git Bash:**
+```bash
+echo ruok | nc localhost 2181    # is OK? → "imok"
+echo stat | nc localhost 2181    # stats (connections, latency, znode count)
 echo mntr | nc localhost 2181    # metrics
 echo conf | nc localhost 2181    # config
+```
+
+**Windows (PowerShell):**
+```powershell
+# nc is not available in PowerShell — use docker exec instead
+docker exec hadoop-hbase bash -c "echo ruok | nc localhost 2181"
+docker exec hadoop-hbase bash -c "echo stat | nc localhost 2181"
+docker exec hadoop-hbase bash -c "echo mntr | nc localhost 2181"
+```
+
+**Windows (Git Bash — nc is bundled with Git for Windows):**
+```bash
+echo ruok | nc localhost 2181
+echo stat | nc localhost 2181
 ```
 
 ## Distributed Patterns

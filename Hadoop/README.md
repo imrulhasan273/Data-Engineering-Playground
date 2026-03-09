@@ -6,16 +6,38 @@ A complete, sequential hands-on guide to **Apache Hadoop 3.x** — from installa
 
 ## Prerequisites
 
+### Linux (AlmaLinux 9 / RHEL / Ubuntu) — Recommended
+
+```bash
+# Install Docker Engine + Compose plugin
+sudo dnf install -y dnf-plugins-core
+sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+sudo systemctl enable --now docker
+sudo usermod -aG docker $USER   # run docker without sudo (re-login after)
+
+# Install Python 3
+sudo dnf install -y python3 python3-pip
+
+# All .sh scripts run natively in bash — no extra tools needed
+```
+
+### Windows
+
 | Tool | Purpose | Install |
 |------|---------|---------|
-| Docker Desktop | Run the cluster | https://www.docker.com/products/docker-desktop/ |
-| Git Bash / WSL2 | Run `.sh` scripts on Windows | Bundled with Git / Windows Store |
+| Docker Desktop >= 24.x | Run the cluster | https://www.docker.com/products/docker-desktop/ |
+| Git Bash or WSL2 | Run `.sh` scripts | Bundled with Git / Windows Store |
 | Python 3.8+ | MapReduce scripts, HBase API | https://www.python.org/ |
+
+> **Windows users**: Run all `.sh` scripts in **Git Bash** or **WSL2**, not PowerShell or CMD.
+> Docker `compose` commands work from PowerShell too.
 
 ---
 
 ## Start the Cluster (Do This First!)
 
+**Linux / Mac / Git Bash:**
 ```bash
 cd Hadoop/00_Setup
 docker compose up -d       # first run: downloads ~4 GB of images
@@ -23,15 +45,25 @@ docker compose ps          # verify all containers are running
 bash verify_setup.sh       # smoke test
 ```
 
-**Web UIs** (open after cluster starts):
+**Windows (PowerShell) — docker commands only:**
+```powershell
+cd Hadoop\00_Setup
+docker compose up -d
+docker compose ps
+# For verify_setup.sh: open Git Bash and run: bash verify_setup.sh
+```
 
-| UI | URL |
-|----|-----|
-| HDFS NameNode | http://localhost:9870 |
-| YARN Jobs | http://localhost:8088 |
-| MapReduce History | http://localhost:19888 |
-| Spark History | http://localhost:18080 |
-| HBase Master | http://localhost:16010 |
+**Web UIs** (open in browser after cluster starts):
+
+| UI | URL (local) | URL (VPS — replace IP) |
+|----|-------------|------------------------|
+| HDFS NameNode | http://localhost:9870 | http://YOUR_VPS_IP:9870 |
+| YARN Jobs | http://localhost:8088 | http://YOUR_VPS_IP:8088 |
+| MapReduce History | http://localhost:19888 | http://YOUR_VPS_IP:19888 |
+| Spark History | http://localhost:18080 | http://YOUR_VPS_IP:18080 |
+| HBase Master | http://localhost:16010 | http://YOUR_VPS_IP:16010 |
+
+> **AlmaLinux 9 VPS**: Open firewall ports first — see [00_Setup/README.md](00_Setup/README.md#linux-vps-firewall-setup-almalinux-9).
 
 ---
 

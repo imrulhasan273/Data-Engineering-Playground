@@ -56,46 +56,100 @@ Multi-hop:  [Collector Agent] ──Avro──► [Aggregator Agent] ──► H
 
 ## Quick Start
 
-### Install Flume on AlmaLinux 9
+### Install Flume
 
+**Linux (AlmaLinux 9 / RHEL):**
 ```bash
-sudo dnf install -y java-11-openjdk
+sudo dnf install -y java-11-openjdk wget
+wget https://downloads.apache.org/flume/1.11.0/apache-flume-1.11.0-bin.tar.gz
+tar -xzf apache-flume-1.11.0-bin.tar.gz
+sudo mv apache-flume-1.11.0-bin /opt/flume
+echo 'export PATH=$PATH:/opt/flume/bin' >> ~/.bashrc
+source ~/.bashrc
+flume-ng version
+```
+
+**Ubuntu / Debian:**
+```bash
+sudo apt-get install -y default-jdk wget
 wget https://downloads.apache.org/flume/1.11.0/apache-flume-1.11.0-bin.tar.gz
 tar -xzf apache-flume-1.11.0-bin.tar.gz
 sudo mv apache-flume-1.11.0-bin /opt/flume
 export PATH=$PATH:/opt/flume/bin
 ```
 
+**Windows (Git Bash):**
+```bash
+# Install Java first: https://adoptium.net/
+# Then download Flume zip from https://flume.apache.org/download.html
+# Extract to C:\flume and add to PATH
+
+# Set JAVA_HOME in Git Bash
+export JAVA_HOME="/c/Program Files/Eclipse Adoptium/jdk-11..."
+export PATH=$PATH:/c/flume/bin
+flume-ng version
+```
+
 ### Run the Basic Agent (test locally)
 
+**Linux / Mac / Git Bash (Terminal 1):**
 ```bash
-# Terminal 1: Start agent
 flume-ng agent \
   --name agent1 \
-  --conf-file 01_flume_basic.conf \
+  --conf-file 10_Flume/01_flume_basic.conf \
   --conf /opt/flume/conf \
   -Dflume.root.logger=INFO,console
+```
 
-# Terminal 2: Send test events
+**Linux / Mac / Git Bash (Terminal 2 — send test events):**
+```bash
 echo "Hello Flume" | nc localhost 44444
+echo "Event 2"     | nc localhost 44444
+```
+
+**Windows (Git Bash Terminal 2):**
+```bash
+# nc is bundled with Git for Windows
+echo "Hello Flume" | nc localhost 44444
+```
+
+**Windows (PowerShell Terminal 2 — alternative):**
+```powershell
+$client = New-Object System.Net.Sockets.TcpClient("localhost", 44444)
+$stream = $client.GetStream()
+$bytes  = [System.Text.Encoding]::ASCII.GetBytes("Hello Flume`n")
+$stream.Write($bytes, 0, $bytes.Length)
+$client.Close()
 ```
 
 ### Run the HDFS Agent
 
+**Linux:**
 ```bash
-# Setup test log data
 mkdir -p /var/log/app
 echo "$(date) INFO Test event" >> /var/log/app/events.log
 
-# Start agent
 flume-ng agent \
   --name hdfs_agent \
-  --conf-file 02_flume_hdfs_sink.conf \
+  --conf-file 10_Flume/02_flume_hdfs_sink.conf \
   --conf /opt/flume/conf \
   -Dflume.root.logger=INFO,console
 
-# Verify data arriving in HDFS
+# Verify data in HDFS
 hdfs dfs -ls -R /flume/
+```
+
+**Windows (Git Bash):**
+```bash
+mkdir -p /c/logs/app
+echo "$(date) INFO Test event" >> /c/logs/app/events.log
+# Edit 02_flume_hdfs_sink.conf: change filegroups path to /c/logs/app/.*\\.log
+
+flume-ng agent \
+  --name hdfs_agent \
+  --conf-file 10_Flume/02_flume_hdfs_sink.conf \
+  --conf /c/flume/conf \
+  -Dflume.root.logger=INFO,console
 ```
 
 ## Key Concepts

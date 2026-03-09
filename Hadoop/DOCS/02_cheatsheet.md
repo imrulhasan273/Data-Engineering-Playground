@@ -2,11 +2,41 @@
 
 All essential commands in one place. Copy-paste ready.
 
+> **Platform notes:**
+> - Most commands here are **bash** — run them on Linux / Mac / Git Bash (Windows) or inside a Docker container
+> - Docker commands (`docker exec`, `docker compose`) work identically on Linux and Windows PowerShell
+> - Inside containers the OS is always Linux — all paths use forward slashes `/`
+> - Windows-specific alternatives are noted with **[Windows PS]**
+
+---
+
+## Install Docker
+
+**Linux (AlmaLinux 9 / RHEL):**
+```bash
+sudo dnf install -y dnf-plugins-core
+sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+sudo systemctl enable --now docker
+sudo usermod -aG docker $USER   # run without sudo (re-login after)
+```
+
+**Ubuntu / Debian:**
+```bash
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+sudo systemctl enable --now docker
+sudo usermod -aG docker $USER
+```
+
+**Windows:** Install Docker Desktop from https://www.docker.com/products/docker-desktop/
+
 ---
 
 ## Connect to Containers
 
 ```bash
+# Linux / Mac / Git Bash / PowerShell — all identical
 docker exec -it hadoop-namenode  bash   # HDFS, YARN, MapReduce, Pig, Sqoop
 docker exec -it hadoop-hive      bash   # Hive / Beeline
 docker exec -it hadoop-hbase     bash   # HBase shell
@@ -196,6 +226,8 @@ hadoop jar "$STREAMING_JAR" \
 ```
 
 ### Local Pipeline Test
+
+**Linux / Mac / Git Bash:**
 ```bash
 # Simulate MapReduce without Hadoop
 cat input.txt | python3 mapper.py | sort | python3 reducer.py
@@ -205,6 +237,22 @@ cat wordcount_output.txt \
   | TOPN_N=10 python3 mapper.py \
   | sort \
   | TOPN_N=10 python3 reducer.py
+```
+
+**Windows (PowerShell):**
+```powershell
+# Basic pipeline
+Get-Content input.txt | python mapper.py | Sort-Object | python reducer.py
+
+# With env var — set before running
+$env:TOPN_N = "10"
+Get-Content wordcount_output.txt | python mapper.py | Sort-Object | python reducer.py
+```
+
+**Windows (Git Bash) — recommended (same as Linux):**
+```bash
+cat input.txt | python3 mapper.py | sort | python3 reducer.py
+TOPN_N=10 python3 mapper.py < input.txt | sort | TOPN_N=10 python3 reducer.py
 ```
 
 ---
@@ -438,7 +486,10 @@ spark.sql("SELECT * FROM my_table WHERE salary > 50000").show()
 
 ## Docker Cluster Management
 
+The following `docker compose` and `docker exec` commands work **identically** on Linux, Mac, and Windows PowerShell/Git Bash.
+
 ```bash
+# Linux / Mac / Git Bash / PowerShell — all the same
 cd Hadoop/00_Setup
 
 # Start / Stop
@@ -456,11 +507,55 @@ docker compose logs -f          # follow all logs
 # Resource usage
 docker stats                    # live CPU/memory per container
 
-# Copy files to container
-docker cp ./myscript.sh hadoop-namenode:/tmp/myscript.sh
-docker cp ./scripts/ hadoop-namenode:/opt/scripts/
-
 # Shell into container
 docker exec -it hadoop-namenode bash
 docker exec hadoop-namenode hdfs dfs -ls /   # one-off command
+```
+
+### Copy files to container
+
+**Linux / Mac / Git Bash:**
+```bash
+docker cp ./myscript.sh  hadoop-namenode:/tmp/myscript.sh
+docker cp ./scripts/     hadoop-namenode:/opt/scripts/
+```
+
+**Windows (PowerShell):**
+```powershell
+docker cp .\myscript.sh  hadoop-namenode:/tmp/myscript.sh
+docker cp .\scripts\     hadoop-namenode:/opt/scripts/
+```
+
+### Check port usage on host
+
+**Linux (AlmaLinux 9):**
+```bash
+sudo ss -tlnp | grep 9870     # check port 9870
+sudo lsof -i :9870            # alternative
+```
+
+**Windows (PowerShell):**
+```powershell
+netstat -ano | findstr :9870
+```
+
+### VPS-specific: open firewall ports
+
+```bash
+# AlmaLinux 9 / RHEL / CentOS
+sudo firewall-cmd --add-port=9870/tcp  --permanent   # HDFS UI
+sudo firewall-cmd --add-port=8088/tcp  --permanent   # YARN UI
+sudo firewall-cmd --add-port=19888/tcp --permanent   # MR History
+sudo firewall-cmd --add-port=18080/tcp --permanent   # Spark History
+sudo firewall-cmd --add-port=16010/tcp --permanent   # HBase UI
+sudo firewall-cmd --reload
+sudo firewall-cmd --list-ports          # verify
+
+# Ubuntu / Debian (ufw)
+sudo ufw allow 9870/tcp
+sudo ufw allow 8088/tcp
+sudo ufw allow 19888/tcp
+sudo ufw allow 18080/tcp
+sudo ufw allow 16010/tcp
+sudo ufw reload
 ```

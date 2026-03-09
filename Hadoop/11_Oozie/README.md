@@ -23,20 +23,39 @@ Bundle      → groups multiple Coordinators ("all daily ETL jobs")
 
 ## Quick Start
 
+> Oozie runs **server-side on Linux**. All `oozie` CLI commands and `hdfs dfs` commands are run
+> either inside the cluster (via `docker exec`) or on the Linux VPS where Hadoop is installed.
+> Windows users: run these via **Git Bash**, **WSL2**, or `docker exec -it hadoop-namenode bash`.
+
 ### 1. Deploy workflow to HDFS
+
+**Linux / Mac / Git Bash:**
 ```bash
 # Upload workflow files
 hdfs dfs -mkdir -p hdfs:///oozie/apps/wordcount/scripts
-hdfs dfs -put 01_workflow.xml  hdfs:///oozie/apps/wordcount/workflow.xml
+hdfs dfs -put 11_Oozie/01_workflow.xml  hdfs:///oozie/apps/wordcount/workflow.xml
 
 # Create sample input
 echo "Hello Oozie World" | hdfs dfs -put - hdfs:///data/input/sample.txt
 ```
 
+**Windows (PowerShell — via docker exec):**
+```powershell
+# Copy files into NameNode container, then run hdfs commands inside
+docker cp 11_Oozie\ hadoop-namenode:/tmp/oozie/
+docker exec -it hadoop-namenode bash -c "
+  hdfs dfs -mkdir -p hdfs:///oozie/apps/wordcount/scripts
+  hdfs dfs -put /tmp/oozie/01_workflow.xml hdfs:///oozie/apps/wordcount/workflow.xml
+  echo 'Hello Oozie World' | hdfs dfs -put - hdfs:///data/input/sample.txt
+"
+```
+
 ### 2. Submit and monitor
+
+**Linux / Mac / Git Bash:**
 ```bash
 # Submit workflow
-oozie job -oozie http://localhost:11000/oozie -config 04_job.properties -run
+oozie job -oozie http://localhost:11000/oozie -config 11_Oozie/04_job.properties -run
 
 # Monitor (replace with actual job ID)
 oozie job -oozie http://localhost:11000/oozie -info 0000000-...-W
@@ -48,8 +67,22 @@ oozie job -oozie http://localhost:11000/oozie -log 0000000-...-W
 oozie jobs -oozie http://localhost:11000/oozie -status RUNNING
 ```
 
-### 3. Control jobs
+**Windows (Git Bash — same commands):**
 ```bash
+# Same as above — Git Bash handles these identically
+oozie job -oozie http://localhost:11000/oozie -config 11_Oozie/04_job.properties -run
+```
+
+**Windows (PowerShell — check job status via REST API):**
+```powershell
+# Oozie exposes a REST API — use it from PowerShell
+Invoke-WebRequest "http://localhost:11000/oozie/v1/jobs?jobtype=wf" | ConvertFrom-Json
+```
+
+### 3. Control jobs
+
+```bash
+# Linux / Mac / Git Bash / WSL2
 oozie job -oozie http://localhost:11000/oozie -suspend <job-id>   # pause
 oozie job -oozie http://localhost:11000/oozie -resume  <job-id>   # unpause
 oozie job -oozie http://localhost:11000/oozie -kill     <job-id>  # kill
