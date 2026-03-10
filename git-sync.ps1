@@ -7,10 +7,10 @@ param(
 )
 
 Set-StrictMode -Version Latest
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
 # --- Log setup ----------------------------------------------------------------
-$logDir  = Join-Path $PSScriptRoot "log"
+$logDir = Join-Path $PSScriptRoot "log"
 $logFile = Join-Path $logDir "git-sync_$(Get-Date -Format 'yyyy-MM-dd').log"
 if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir | Out-Null }
 
@@ -18,9 +18,9 @@ function Log([string]$level, [string]$text) {
     $line = "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] [$level] $text"
     Add-Content -Path $logFile -Value $line
     switch ($level) {
-        "INFO"  { Write-Host $line -ForegroundColor Cyan }
-        "OK"    { Write-Host $line -ForegroundColor Green }
-        "WARN"  { Write-Host $line -ForegroundColor Yellow }
+        "INFO" { Write-Host $line -ForegroundColor Cyan }
+        "OK" { Write-Host $line -ForegroundColor Green }
+        "WARN" { Write-Host $line -ForegroundColor Yellow }
         "ERROR" { Write-Host $line -ForegroundColor Red }
     }
 }
@@ -59,7 +59,8 @@ Log INFO "[3/4] Committing: '$commitMsg'"
 $porcelain = git status --porcelain
 if (-not $porcelain) {
     Log WARN "Nothing to commit - working tree clean."
-} else {
+}
+else {
     $commitOut = git commit -m $commitMsg 2>&1
     Add-Content -Path $logFile -Value ($commitOut | Out-String)
     if ($LASTEXITCODE -ne 0) {
