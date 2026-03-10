@@ -45,7 +45,7 @@ All ports are configurable via `Hadoop/00_Setup/.env`.
 | Spark History | 18080 | `SPARK_HISTORY_PORT` | Web UI |
 | Spark Web UI | 8080 | — | Web UI |
 | Spark Master RPC | 7077 | — | Spark submit |
-| PostgreSQL | 5432 | `POSTGRES_PORT` | Hive metastore DB |
+| PostgreSQL | 5433 | `POSTGRES_PORT` | Hive metastore DB (5432 used by host) |
 
 ---
 
