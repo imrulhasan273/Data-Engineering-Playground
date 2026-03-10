@@ -84,9 +84,14 @@ echo ""
 
 # ── 5. HDFS DataNode count ───────────────────────────────────────────────────
 info "Checking DataNode count..."
-LIVE_NODES=$(curl -sf "http://localhost:9870/jmx?qry=Hadoop:service=NameNode,name=FSNamesystemState" 2>/dev/null | python3 -c "import json,sys; data=json.load(sys.stdin); [print(b['value']) for b in data['beans'][0].get('beans',[]) if False] or print(json.load(open('/dev/stdin')) if False else 0)" 2>/dev/null || echo "unknown")
-LIVE_NODES=$(curl -sf "http://localhost:9870/jmx?qry=Hadoop:service=NameNode,name=NameNodeInfo" 2>/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['beans'][0].get('NumLiveDataNodes','?'))" 2>/dev/null || echo "unknown")
-info "Live DataNodes: $LIVE_NODES (expected: 2)"
+LIVE_NODES=$(curl -sf "http://localhost:9870/jmx?qry=Hadoop:service=NameNode,name=FSNamesystemState" 2>/dev/null \
+  | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['beans'][0].get('NumLiveDataNodes','?'))" 2>/dev/null \
+  || echo "unknown")
+if [ "$LIVE_NODES" = "2" ]; then
+  pass "Live DataNodes: $LIVE_NODES"
+else
+  info "Live DataNodes: $LIVE_NODES (expected: 2)"
+fi
 
 echo ""
 echo "═══════════════════════════════════════════════════"
