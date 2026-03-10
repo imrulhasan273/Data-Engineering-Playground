@@ -98,7 +98,7 @@ Client → Router (transparent proxy) → NameNode A or B
 <!-- hdfs-site.xml -->
 <property>
   <name>dfs.federation.router.store.driver.class</name>
-  <value>org.apache.hadoop.hdfs.server.federation.store.driver.impl.StateStoreMySQLImpl</value>
+  <value>org.apache.hadoop.hdfs.server.federation.store.driver.impl.StateStoreZooKeeperImpl</value>
 </property>
 <property>
   <name>dfs.federation.router.rpc-address</name>

@@ -204,7 +204,7 @@ echo "    Ranger Audit  — logs to HDFS, Solr, or Elasticsearch"
 echo -e "\n[3a] Ranger installation (AlmaLinux 9)"
 cat << 'RANGER_INSTALL'
   # Install Java and required dependencies
-  sudo dnf install -y java-11-openjdk mysql-server python3
+  sudo dnf install -y java-11-openjdk postgresql-server python3
 
   # Download Ranger
   wget https://archive.apache.org/dist/ranger/2.4.0/apache-ranger-2.4.0.tar.gz
@@ -213,7 +213,7 @@ cat << 'RANGER_INSTALL'
   # Configure install.properties for RangerAdmin
   cd apache-ranger-2.4.0
   cp admin/conf/install.properties admin/conf/install.properties.bak
-  # Edit: DB_FLAVOR=MYSQL, db_root_user, db_root_password, db_host, etc.
+  # Edit: DB_FLAVOR=POSTGRES, db_root_user, db_root_password, db_host, etc.
 
   # Setup Ranger Admin
   sudo ./setup.sh

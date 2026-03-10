@@ -98,7 +98,7 @@ Docker Desktop → Settings → Resources → Memory → set to 6 GB+
 │  └──────────────┘   └──────────────┘               │
 │                                                     │
 │  ┌──────────────┐   ┌──────────────┐               │
-│  │    Spark     │   │   MySQL      │               │
+│  │    Spark     │   │  PostgreSQL  │               │
 │  │  History:18080│  │  (Hive Meta) │               │
 │  └──────────────┘   └──────────────┘               │
 └─────────────────────────────────────────────────────┘
@@ -140,7 +140,7 @@ hadoop-resourcemgr  running
 hadoop-hive         running
 hadoop-hbase        running
 hadoop-spark        running
-hadoop-mysql        running
+hadoop-postgres     running
 ```
 
 ### Step 3: Verify Setup
@@ -187,7 +187,7 @@ docker exec -it hadoop-namenode bash
 docker exec -it hadoop-hive  bash    # Hive / Beeline
 docker exec -it hadoop-hbase bash    # HBase shell
 docker exec -it hadoop-spark bash    # Spark submit
-docker exec -it hadoop-mysql bash    # MySQL
+docker exec -it hadoop-postgres bash # PostgreSQL (then: psql -U hive -d hive_metastore)
 ```
 
 **Windows (PowerShell or CMD):**

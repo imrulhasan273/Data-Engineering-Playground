@@ -5,7 +5,7 @@ Hive provides a SQL-like interface (HiveQL) for querying data stored in HDFS. Qu
 
 ## Architecture
 ```
-Client → HiveServer2 → (MetaStore → MySQL)
+Client → HiveServer2 → (MetaStore → PostgreSQL 17)
                       → (Execution Engine: Tez/MR/Spark)
                       → HDFS (data)
 ```

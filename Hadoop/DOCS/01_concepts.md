@@ -225,7 +225,7 @@ HiveServer2
     ├── Optimizer           (partition pruning, join reorder, etc.)
     └── Execution Engine    (Tez / MR / Spark)
          ↓
-    HDFS (data) + Metastore (MySQL/Postgres — table schemas)
+    HDFS (data) + Metastore (PostgreSQL 17 — table schemas)
 ```
 
 ### Table Types
@@ -414,7 +414,8 @@ Sqoop (client tool)
 ### Key Sqoop Options
 ```bash
 sqoop import \
-  --connect jdbc:mysql://host:3306/db \
+  --connect jdbc:postgresql://postgres:5432/db \
+  --driver org.postgresql.Driver \
   --username user --password pass \
   --table employees \
   --target-dir /hdfs/path \

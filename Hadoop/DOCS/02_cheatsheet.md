@@ -41,7 +41,7 @@ docker exec -it hadoop-namenode  bash   # HDFS, YARN, MapReduce, Pig, Sqoop
 docker exec -it hadoop-hive      bash   # Hive / Beeline
 docker exec -it hadoop-hbase     bash   # HBase shell
 docker exec -it hadoop-spark     bash   # Spark submit
-docker exec -it hadoop-mysql     bash   # MySQL
+docker exec -it hadoop-postgres  bash   # PostgreSQL (psql -U hive -d hive_metastore)
 ```
 
 ---
@@ -377,14 +377,18 @@ SET job.name 'MyPigJob';
 ## Sqoop
 
 ```bash
+# PostgreSQL JDBC driver must be in Sqoop lib (run once):
+# wget -q https://jdbc.postgresql.org/download/postgresql-42.7.4.jar -O /opt/sqoop/lib/postgresql.jar
+
 # List
-sqoop list-databases --connect jdbc:mysql://host:3306/ -u user -p pass
-sqoop list-tables    --connect jdbc:mysql://host:3306/db -u user -p pass
+sqoop list-databases --connect jdbc:postgresql://postgres:5432/ --driver org.postgresql.Driver -u hive -p hive
+sqoop list-tables    --connect jdbc:postgresql://postgres:5432/db --driver org.postgresql.Driver -u hive -p hive
 
 # Import full table
 sqoop import \
-  --connect jdbc:mysql://host:3306/db \
-  --username user --password pass \
+  --connect jdbc:postgresql://postgres:5432/db \
+  --driver org.postgresql.Driver \
+  --username hive --password hive \
   --table tablename \
   --target-dir /hdfs/output \
   --num-mappers 4 \
@@ -404,8 +408,9 @@ sqoop import --incremental append \
 
 # Export
 sqoop export \
-  --connect jdbc:mysql://host:3306/db \
-  --username user --password pass \
+  --connect jdbc:postgresql://postgres:5432/db \
+  --driver org.postgresql.Driver \
+  --username hive --password hive \
   --table target_table \
   --export-dir /hdfs/input \
   --input-fields-terminated-by ','

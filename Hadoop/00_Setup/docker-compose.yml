@@ -2,7 +2,7 @@ version: "3.8"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Hadoop 3.3.6 Full Cluster
-# Includes: HDFS, YARN, MapReduce, Hive, HBase, Spark, ZooKeeper, MySQL
+# Includes: HDFS, YARN, MapReduce, Hive, HBase, Spark, ZooKeeper, PostgreSQL
 # ─────────────────────────────────────────────────────────────────────────────
 
 networks:
@@ -14,7 +14,7 @@ volumes:
   datanode1_data:
   datanode2_data:
   hbase_data:
-  mysql_data:
+  postgres_data:
   spark_history:
 
 # Shared Hadoop config injected into all Hadoop services
@@ -142,24 +142,23 @@ services:
     networks:
       - hadoop-net
 
-  # ── MySQL (Hive Metastore backend) ─────────────────────────────────────────
-  mysql:
-    image: mysql:8.0
-    container_name: hadoop-mysql
+  # ── PostgreSQL 17 (Hive Metastore backend) ──────────────────────────────────
+  postgres:
+    image: postgres:17
+    container_name: hadoop-postgres
     restart: unless-stopped
     ports:
-      - "${MYSQL_PORT:-3306}:3306"
+      - "${POSTGRES_PORT:-5432}:5432"
     environment:
-      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:-hivepassword}"
-      MYSQL_DATABASE: "${MYSQL_DATABASE:-hive_metastore}"
-      MYSQL_USER: "${MYSQL_USER:-hive}"
-      MYSQL_PASSWORD: "${MYSQL_PASSWORD:-hive}"
+      POSTGRES_DB: "${POSTGRES_DB:-hive_metastore}"
+      POSTGRES_USER: "${POSTGRES_USER:-hive}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-hive}"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - hadoop-net
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-hivepassword}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hive} -d ${POSTGRES_DB:-hive_metastore}"]
       interval: 20s
       timeout: 10s
       retries: 5
@@ -174,15 +173,15 @@ services:
       - "${HIVE_WEBUI_PORT:-10002}:10002"     # HiveServer2 Web UI
     environment:
       <<: *hadoop-env
-      HIVE_SITE_CONF_javax_jdo_option_ConnectionURL: "jdbc:mysql://mysql:3306/hive_metastore?createDatabaseIfNotExist=true"
-      HIVE_SITE_CONF_javax_jdo_option_ConnectionDriverName: "com.mysql.cj.jdbc.Driver"
-      HIVE_SITE_CONF_javax_jdo_option_ConnectionUserName: "${MYSQL_USER:-hive}"
-      HIVE_SITE_CONF_javax_jdo_option_ConnectionPassword: "${MYSQL_PASSWORD:-hive}"
+      HIVE_SITE_CONF_javax_jdo_option_ConnectionURL: "jdbc:postgresql://postgres:5432/hive_metastore"
+      HIVE_SITE_CONF_javax_jdo_option_ConnectionDriverName: "org.postgresql.Driver"
+      HIVE_SITE_CONF_javax_jdo_option_ConnectionUserName: "${POSTGRES_USER:-hive}"
+      HIVE_SITE_CONF_javax_jdo_option_ConnectionPassword: "${POSTGRES_PASSWORD:-hive}"
       HIVE_SITE_CONF_datanucleus_autoCreateSchema: "false"
       HIVE_SITE_CONF_hive_metastore_uris: "thrift://hive:9083"
-      SERVICE_PRECONDITION: "namenode:9870 datanode1:9864 mysql:3306"
+      SERVICE_PRECONDITION: "namenode:9870 datanode1:9864 postgres:5432"
     depends_on:
-      mysql:
+      postgres:
         condition: service_healthy
       datanode1:
         condition: service_started

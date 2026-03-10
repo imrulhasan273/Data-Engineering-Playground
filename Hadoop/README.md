@@ -84,7 +84,7 @@ Work through the modules in order — each builds on the previous.
 ## Module Overview
 
 ### [00_Setup](00_Setup/) — Cluster Setup
-Docker Compose cluster with HDFS, YARN, Hive, HBase, Spark, MySQL.
+Docker Compose cluster with HDFS, YARN, Hive, HBase, Spark, PostgreSQL 17.
 
 | File | Purpose |
 |------|---------|

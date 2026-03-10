@@ -1,0 +1,78 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# .gitignore — Data Engineering Playground
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+log/
+logs/
+*.log
+*.log.*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Python ───────────────────────────────────────────────────────────────────
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+pip-wheel-metadata/
+*.whl
+
+# ── Jupyter ───────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ── Docker volumes / local data ───────────────────────────────────────────────
+data/
+volumes/
+docker-data/
+
+# ── Hadoop / Hive / Spark output ─────────────────────────────────────────────
+output/
+tmp/
+temp/
+*.out
+*.err
+derby.log
+metastore_db/
+
+# ── Node (node/ folder in repo) ───────────────────────────────────────────────
+node/node_modules/
+node/package-lock.json
+
+# ── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# ── IDE / Editor ─────────────────────────────────────────────────────────────
+.vscode/settings.json
+.idea/
+*.suo
+*.user
+*.swp
+*.swo
+*~
+
+# ── Secrets / credentials ─────────────────────────────────────────────────────
+.env.local
+.env.production
+*.pem
+*.key
+*.cert
+secrets/
+
+# ── Archives / downloads ─────────────────────────────────────────────────────
+*.tar.gz
+*.zip
+*.tgz
+*.jar
+!Hadoop/07_Sqoop/lib/*.jar

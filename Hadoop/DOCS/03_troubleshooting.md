@@ -325,12 +325,12 @@ hdfs dfs -ls /user/hive/warehouse/mydb.db/mytable/
 
 ### Metastore connection error
 ```bash
-# MySQL metastore may not be ready yet
-docker compose logs mysql | tail -20
+# PostgreSQL metastore may not be ready yet
+docker compose logs postgres | tail -20
 
-# Check Hive can reach MySQL
+# Check Hive can reach PostgreSQL
 docker exec -it hadoop-hive bash
-mysql -h mysql -u hive -phive hive_metastore -e "SHOW TABLES;"
+PGPASSWORD=hive psql -h postgres -U hive -d hive_metastore -c "\dt"
 ```
 
 ### MapReduce/Tez task failed
@@ -454,14 +454,18 @@ spark-submit --py-files deps.zip script.py
 
 ## Sqoop Issues
 
-### Connection refused to MySQL
+### Connection refused to PostgreSQL
 ```bash
-# Check MySQL is running
-docker ps | grep mysql
-mysql -h mysql -u hive -phive hive_metastore -e "SELECT 1"
+# Check PostgreSQL is running
+docker ps | grep postgres
+PGPASSWORD=hive psql -h postgres -U hive -d hive_metastore -c "SELECT 1"
 
 # Use container hostname, not localhost
---connect jdbc:mysql://mysql:3306/dbname   # NOT localhost
+--connect jdbc:postgresql://postgres:5432/dbname   # NOT localhost
+
+# PostgreSQL JDBC driver must be in Sqoop lib:
+wget -q https://jdbc.postgresql.org/download/postgresql-42.7.4.jar \
+  -O /opt/sqoop/lib/postgresql.jar
 ```
 
 ### Sqoop import: "No primary key could be found"
