@@ -125,8 +125,13 @@ services:
     environment:
       <<: *hadoop-env
       SERVICE_PRECONDITION: "namenode:9000 namenode:9870 datanode1:9864 datanode2:9864 resourcemanager:8088"
+      YARN_CONF_yarn_nodemanager_local___dirs: "/yarn-local"
+      YARN_CONF_yarn_nodemanager_log___dirs: "/yarn-logs"
+    # Pre-create dirs on tmpfs before NodeManager starts (Java getUsableSpace() returns 0 for non-existent paths)
+    command: ["bash", "-c", "mkdir -p /yarn-local /yarn-logs && exec /run.sh"]
     tmpfs:
-      - /tmp/hadoop-root:exec,size=512m
+      - /yarn-local
+      - /yarn-logs
     depends_on:
       resourcemanager:
         condition: service_healthy
