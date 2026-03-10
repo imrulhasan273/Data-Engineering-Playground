@@ -16,6 +16,7 @@ volumes:
   hbase_data:
   postgres_data:
   spark_history:
+  yarn_local:
 
 # Shared Hadoop config injected into all Hadoop services
 x-hadoop-env: &hadoop-env
@@ -125,6 +126,8 @@ services:
     environment:
       <<: *hadoop-env
       SERVICE_PRECONDITION: "namenode:9000 namenode:9870 datanode1:9864 datanode2:9864 resourcemanager:8088"
+    volumes:
+      - yarn_local:/tmp/hadoop-root
     depends_on:
       resourcemanager:
         condition: service_healthy
