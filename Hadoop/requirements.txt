@@ -1,0 +1,28 @@
+# Hadoop Playground — Python Dependencies
+# Tested on Python 3.13 + AlmaLinux 9
+#
+# Install (host machine only — container scripts need no host packages):
+#   pip install -r requirements.txt
+#
+# AlmaLinux 9 — install Python 3.13 first:
+#   sudo dnf install -y epel-release
+#   sudo dnf install -y python3.13 python3.13-pip
+#   python3.13 -m pip install -r requirements.txt
+
+# ── HBase Python Client ──────────────────────────────────────────────────────
+# happybase 1.2.0 works with Python 3.13 when paired with thrift >= 0.16
+happybase==1.2.0
+thrift>=0.16.0,<0.21.0        # HappyBase's Thrift transport
+
+# ── ZooKeeper Python Client ──────────────────────────────────────────────────
+# kazoo 2.9+ supports Python 3.13
+kazoo>=2.9.0
+
+# ── PySpark (only if running Spark scripts FROM THE HOST) ────────────────────
+# Container scripts use the Spark install inside the container — skip this
+# for cluster-mode usage. Install only for local testing.
+# pyspark>=3.5.0               # 3.5.x supports Python 3.11-3.12
+# pyspark>=4.0.0               # 4.0.x fully supports Python 3.13
+
+# ── Optional: run Hive UDF scripts locally for testing ───────────────────────
+# (no extra packages needed — all UDFs use stdlib only)

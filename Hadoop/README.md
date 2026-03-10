@@ -122,6 +122,7 @@ Uses **Hadoop Streaming** — Python mapper/reducer read from stdin, write to st
 | `01_WordCount/` | `mapper.py` + `reducer.py` | Basic streaming, combiner |
 | `02_InvertedIndex/` | `mapper.py` + `reducer.py` | env vars, multi-value reduce |
 | `03_TopN/` | `mapper.py` + `reducer.py` | Chained jobs, heap-based top-N |
+| `04_Joins/` | `reduce_side_join_*.py`, `map_side_join.py` | Reduce-side join + map-side (broadcast) join |
 
 ```bash
 # Local test (no Hadoop needed)
@@ -153,6 +154,7 @@ docker exec -it hadoop-namenode bash /opt/mapreduce/01_WordCount/run.sh
 | `06_joins.hql` | INNER, LEFT/RIGHT/FULL OUTER, SEMI, map-side, multi-table, self-join |
 | `07_window_functions.hql` | ROW_NUMBER, RANK, DENSE_RANK, LAG, LEAD, FIRST_VALUE, running totals |
 | `08_execution_engines.hql` | MapReduce vs Tez vs Spark, CBO, vectorization, Metastore as catalog |
+| `08_udf.hql` + `udf_*.py` | Python UDFs via TRANSFORM: scalar, aggregate, PII masking |
 
 ```bash
 docker exec -it hadoop-hive bash /tmp/hive_scripts/01_setup.sh
@@ -167,6 +169,8 @@ docker exec -it hadoop-hive beeline -u "jdbc:hive2://localhost:10000" -f /tmp/hi
 |--------|----------------|
 | `01_shell_operations.sh` | create, put, get, scan, delete, filters, namespaces, compaction |
 | `02_python_happybase.py` | Python HappyBase API, batch writes, counters, scan filters |
+| `03_bulk_load.py` | Batch put at scale, range scans, counter aggregation |
+| `04_bulk_load_importtsv.sh` | ImportTsv → HFiles → completebulkload (100M+ rows) |
 | `03_phoenix_integration.sh` | Phoenix SQL, row key design, HBase filters, Hive-HBase, Spark-HBase |
 
 ```bash

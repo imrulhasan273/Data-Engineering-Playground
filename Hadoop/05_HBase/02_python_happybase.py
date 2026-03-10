@@ -116,7 +116,7 @@ print(f"  Total rows: {sum(1 for _ in table.scan())}")
 print("\n[10] Counter column (atomic increment)")
 conn.create_table('counters', {'c': {}}) if b'counters' not in conn.tables() else None
 ctable = conn.table('counters')
-ctable.put('page:/home', {'c:views': happybase.hbase.ttypes.TCell})
+ctable.put(b'page:/home', {b'c:views': b'\x00\x00\x00\x00\x00\x00\x00\x00'})  # 8-byte zero = counter at 0
 
 # Use counter_inc for atomic increment
 val = ctable.counter_inc(b'page:/home', b'c:views', value=1)
