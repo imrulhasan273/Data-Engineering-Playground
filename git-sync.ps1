@@ -25,6 +25,10 @@ function Log([string]$level, [string]$text) {
     }
 }
 
+# --- Git identity -------------------------------------------------------------
+git config user.email "imrulhasan273@gmail.com"
+git config user.name  "imrulhasan273"
+
 # --- Commit message -----------------------------------------------------------
 $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 $commitMsg = if ($Message) { "$Message [$timestamp]" } else { $timestamp }
